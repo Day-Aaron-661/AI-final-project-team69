@@ -5,6 +5,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+MAX_LEN = 2000 #每首歌採樣的字數, 超過得不會被訓練到少了會填充0
+
 def load_lyrics_folder(folder_path="lyrics"):
     texts, valence, energy = [], [], []
     for filename in os.listdir(folder_path):
@@ -15,8 +17,8 @@ def load_lyrics_folder(folder_path="lyrics"):
                     lines = f.readlines()
                     if len(lines) < 3:
                         continue
-                    e = float(lines[0].strip())
-                    v = float(lines[1].strip())
+                    v = float(lines[0].strip())
+                    e = float(lines[1].strip())
                     lyric = "".join(lines[2:]).strip()
                     energy.append(e)
                     valence.append(v)
@@ -66,7 +68,7 @@ class Vocab:
 
 
 class LyricsDataset(Dataset):
-    def __init__(self, texts, valence, energy, vocab, max_len=50):
+    def __init__(self, texts, valence, energy, vocab, max_len=MAX_LEN):
         self.texts = [self.tokenize(t, vocab, max_len) for t in texts]
         self.valence = valence
         self.energy = energy
@@ -85,7 +87,7 @@ class LyricsDataset(Dataset):
 
 
 class LyricsTestDataset(Dataset):
-    def __init__(self, texts, vocab, max_len=50):
+    def __init__(self, texts, vocab, max_len=MAX_LEN):
         self.texts = [self.tokenize(t, vocab, max_len) for t in texts]
 
     def tokenize(self, text, vocab, max_len):
@@ -102,7 +104,8 @@ class LyricsTestDataset(Dataset):
 
 
 class CNNModel(nn.Module):
-    def __init__(self, vocab_size, embed_dim=50, output_dim=2, max_len=50):
+    def __init__(self, vocab_size, embed_dim=50, output_dim=2, max_len=MAX_LEN):
+        
         super(CNNModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
         self.conv = nn.Sequential(
@@ -110,20 +113,21 @@ class CNNModel(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )
-        conv_output_len = max_len // 2  # due to MaxPool1d(kernel_size=2)
+        conv_output_len = max_len // 2 
         self.fc = nn.Sequential(
             nn.Linear(100 * conv_output_len, 64),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(64, output_dim)
+            nn.Linear(64, output_dim),
+            nn.Sigmoid() # output is between 0 and 1
         )
 
     def forward(self, x):
-        x = self.embedding(x)            # (B, L, E)
-        x = x.permute(0, 2, 1)           # (B, E, L)
-        x = self.conv(x)                 # (B, 100, L/2)
-        x = x.view(x.size(0), -1)        # (B, 100 * L/2)
-        return self.fc(x)                # (B, 2)
+        x = self.embedding(x)         
+        x = x.permute(0, 2, 1)          
+        x = self.conv(x)                
+        x = x.view(x.size(0), -1)       
+        return self.fc(x)           
 
 
 def train(model, train_loader, val_loader, optimizer, loss_fn, device, epochs=10):
