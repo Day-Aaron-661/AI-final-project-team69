@@ -23,10 +23,11 @@ AI-final-project-team69/AI-final-project-team69/
 ```
 
 lyrics 和 validation裡的txt 檔案裏存的內容像
+```
 0.55 # valence
 0.62 # energy  
 First line of lyrics
 Second line of lyrics
 ....
-
+```
 最後 test 資料夾裡的只要歌詞就好了
