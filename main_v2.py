@@ -1,5 +1,5 @@
 from CNN import AudioCNN
-#from lyric_model import TextEncoder
+#from lyric_model import CNNModel
 #from fusion_model import LateFusionModel #名稱之後會改
 
 import torch
