@@ -22,7 +22,7 @@ fusion_model = fusion_model().to(device)
 
 
 #///////////////////////////////////////////////////////////////////////////#
-                          # I n i t i a l i z e
+                          # L o a d  D a t a 
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中
 
