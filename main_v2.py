@@ -1,6 +1,6 @@
 from CNN import AudioCNN
 #from BERT import TextEncoder
-#from Fusion import LateFusionModel
+#from Fusion import LateFusionModel #名稱之後會改
 
 import torch
 from  torch.utils.data import DataLoader , Dataset
@@ -20,23 +20,28 @@ audio_model = audio_model().to(device)
 text_model = text_model().to(device)
 fusion_model = fusion_model().to(device)
 
-train_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'train' )
-train_loader = DataLoader( train_dataset , batch_size = 'TBD' , shuffle = True )
 
-val_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'validate' )
-val_loader = DataLoader( val_dataset , batch_size = 'TBD' , shuffle = True )
+#///////////////////////////////////////////////////////////////////////////#
+                          # I n i t i a l i z e
+#///////////////////////////////////////////////////////////////////////////#
+#這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中
 
-test_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'test' )
-test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )
+train_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'train' ) 
+train_loader = DataLoader( train_dataset , batch_size = 'TBD' , shuffle = True )      #load training data (三合一)示意
 
-criterion = nn.MSELoss()
-optimizer = optim.Adam( fusion_model.parameters() , lr=1e-4 )
+val_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'validate' ) 
+val_loader = DataLoader( val_dataset , batch_size = 'TBD' , shuffle = True )          #load validate data (三合一)示意
 
-
+test_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'test' ) 
+test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )        #load test data (三合一)示意
 
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
 #///////////////////////////////////////////////////////////////////////////#
+# 這區域對 fusion_model 做 training，到時候把 for 迴圈留著然後在 fusion_model.py 做 validate function
+
+criterion = nn.MSELoss()
+optimizer = optim.Adam( fusion_model.parameters() , lr=1e-4 )
 
 print( "training session" )
 
@@ -53,8 +58,8 @@ for epoch in range(EPOCHS):
     for audios , lyrics , labels in train_loader:
         audios , lyrics , labels = audios.to(device), lyrics.to(device), labels.to(device)
 
-        audios_feature = audio_model(audios)
-        lyrics_feature = text_model(lyrics)
+        audios_feature = audio_model(audios) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.train()
+        lyrics_feature = text_model(lyrics)  #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.train()
 
         predict_value = fusion_model( audios_feature , lyrics_feature )
 
@@ -70,10 +75,10 @@ for epoch in range(EPOCHS):
     print(f"Epoch: {epoch+1} finished - Training Loss: {avg_loss:.4f}")
 
 
-
 #///////////////////////////////////////////////////////////////////////////#
                             # v a l i d a t e 
 #///////////////////////////////////////////////////////////////////////////#
+# 這區域對 fusion_model 做 validating，到時候把 for 迴圈留著然後在 fusion_model.py 做 validate function
 
 print( "validate session" )
 
@@ -91,8 +96,8 @@ with torch.no_grad():
         lyrics = lyrics.to(device)
         labels = labels.to(device)
 
-        audios_feature_val = audio_model(audio)
-        lyrics_feature_val = text_model(lyrics)
+        audios_feature_val = audio_model(audio) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.validate()
+        lyrics_feature_val = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
 
         predict_value_val = fusion_model(audios_feature_val, lyrics_feature_val)
 
@@ -108,3 +113,4 @@ print(f"Epoch: {epoch+1} finished - Val Loss: {avg_val_loss:.4f}")
 #///////////////////////////////////////////////////////////////////////////#
                               # t e s t i n g 
 #///////////////////////////////////////////////////////////////////////////#
+# 這區域對 fusion_model 做 testing，到時候要搬進 fusion_model.py
