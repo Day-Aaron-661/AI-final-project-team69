@@ -1,6 +1,6 @@
 from CNN import AudioCNN
-#from BERT import TextEncoder
-#from Fusion import LateFusionModel #名稱之後會改
+#from lyric_model import TextEncoder
+#from fusion_model import LateFusionModel #名稱之後會改
 
 import torch
 from  torch.utils.data import DataLoader , Dataset
