@@ -4,28 +4,38 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from tqdm import tqdm
+import pandas as pd
 
 MAX_LEN = 2000 #每首歌採樣的字數, 超過得不會被訓練到少了會填充0
 
-def load_lyrics_folder(folder_path="lyrics"):
+
+def load_lyrics_folder(lyrics_folder="lyric", csv_path="id_energy_valence.csv"):
     texts, valence, energy = [], [], []
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".txt"):
-            filepath = os.path.join(folder_path, filename)
+
+    # Load the CSV as a DataFrame
+    songs = pd.read_csv(csv_path)
+
+    # Make sure the 'id' column is treated as string to match filenames
+    songs['id'] = songs['id'].astype(str)
+
+    for _, row in songs.iterrows():
+        song_id = row['id']
+        lyric_path = os.path.join(lyrics_folder, f"{song_id}.txt")
+
+        if os.path.exists(lyric_path):
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                    if len(lines) < 3:
-                        continue
-                    v = float(lines[0].strip())
-                    e = float(lines[1].strip())
-                    lyric = "".join(lines[2:]).strip()
-                    energy.append(e)
-                    valence.append(v)
+                with open(lyric_path, 'r', encoding='utf-8') as f:
+                    lyric = f.read().strip()
                     texts.append(lyric)
+                    valence.append(float(row['valence']))
+                    energy.append(float(row['energy']))
             except Exception as ex:
-                print(f"Error reading {filename}: {ex}")
+                print(f"Error reading {lyric_path}: {ex}")
+        else:
+            print(f"File {lyric_path} not found.")
+
     return texts, valence, energy
+
 
 
 def load_test_folder(folder_path="test"):
@@ -53,17 +63,23 @@ class Vocab:
                     idx += 1
         self.itos = {i: w for w, i in self.stoi.items()}
 
-    def save(self, path):
-        with open(path, 'wb') as f:
-            torch.save(self.stoi, f)
+    def save_to_txt(self, filepath):
+        with open(filepath, "w", encoding="utf-8") as f:
+            for word, index in self.stoi.items():
+                f.write(f"{word}\t{index}\n")
 
-    @classmethod
-    def load(cls, path):
-        with open(path, 'rb') as f:
-            stoi = torch.load(f)
-        vocab = cls([])
+    @staticmethod
+    def load_from_txt(filepath):
+        stoi = {}
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                word, index = line.strip().split("\t")
+                stoi[word] = int(index)
+        vocab = Vocab([])
         vocab.stoi = stoi
-        vocab.itos = {i: w for w, i in stoi.items()}
+        vocab.itos = [None] * len(stoi)
+        for word, index in stoi.items():
+            vocab.itos[index] = word
         return vocab
 
 
@@ -104,7 +120,7 @@ class LyricsTestDataset(Dataset):
 
 
 class CNNModel(nn.Module):
-    def __init__(self, vocab_size, embed_dim=50, output_dim=2, max_len=MAX_LEN):
+    def __init__(self, vocab_size, embed_dim=50, output_dim=2, max_len=MAX_LEN, feature_dim=128):
         
         super(CNNModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
@@ -114,20 +130,28 @@ class CNNModel(nn.Module):
             nn.MaxPool1d(kernel_size=2)
         )
         conv_output_len = max_len // 2 
-        self.fc = nn.Sequential(
+        self.fc_feature = nn.Sequential(
             nn.Linear(100 * conv_output_len, 64),
             nn.ReLU(),
             nn.Dropout(0.3),
+            nn.Linear(64, feature_dim),
+            nn.ReLU()
+        )
+        self.fc_output = nn.Sequential(
+            nn.Linear(feature_dim, 64),
+            nn.ReLU(),
             nn.Linear(64, output_dim),
-            nn.Sigmoid() # output is between 0 and 1
+            nn.Sigmoid()
         )
 
     def forward(self, x):
         x = self.embedding(x)         
         x = x.permute(0, 2, 1)          
         x = self.conv(x)                
-        x = x.view(x.size(0), -1)       
-        return self.fc(x)           
+        x = x.view(x.size(0), -1) 
+        features = self.fc_feature(x)   # 128 feature matrix
+        output = self.fc_output(features)    #valence, energy
+        return features, output      
 
 
 def train(model, train_loader, val_loader, optimizer, loss_fn, device, epochs=10):
@@ -138,7 +162,8 @@ def train(model, train_loader, val_loader, optimizer, loss_fn, device, epochs=10
         progress = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}")
         for inputs, targets in progress:
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
+            feature, outputs = model(inputs)
+            # print(feature)
             loss = loss_fn(outputs, targets)
 
             optimizer.zero_grad()
@@ -166,7 +191,7 @@ def evaluate(model, val_loader, loss_fn, device):
     with torch.no_grad():
         for inputs, targets in val_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
+            feature, outputs = model(inputs)
             loss = loss_fn(outputs, targets)
             total_loss += loss.item()
             valence_mse += ((outputs[:, 0] - targets[:, 0]) ** 2).mean().item()

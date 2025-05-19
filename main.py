@@ -11,13 +11,14 @@ from lyrics_model import (
 )
 
 # Load training and validation data
-train_texts, train_valence, train_energy = load_lyrics_folder("lyrics")
-val_texts, val_valence, val_energy = load_lyrics_folder("validation")
+train_texts, train_valence, train_energy = load_lyrics_folder("lyric", "id_energy_valence.csv")
+val_texts, val_valence, val_energy = load_lyrics_folder("lyric", "id_energy_valence.csv")
 
 # Build and save vocab
 vocab = Vocab(train_texts)
-with open("vocab.pkl", "wb") as f:
-    pickle.dump(vocab, f)
+
+vocab.save_to_txt("vocab.txt")
+
 
 # Prepare datasets and dataloaders
 train_dataset = LyricsDataset(train_texts, train_valence, train_energy, vocab)
@@ -32,19 +33,19 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 loss_fn = torch.nn.MSELoss()
 
 # Train the model
-train(model, train_loader, val_loader, optimizer, loss_fn, device, epochs=10)
+train(model, train_loader, val_loader, optimizer, loss_fn, device, epochs=30)
 
 
 # Load vocab and model
-with open("vocab.pkl", "rb") as f:
-    vocab = pickle.load(f)
+vocab = Vocab.load_from_txt("vocab.txt")
 
 model = CNNModel(len(vocab.stoi)).to(device)
 model.load_state_dict(torch.load("best_model_lyrics.pt"))
 model.eval()
 
 # Load test lyrics
-test_data = load_test_folder("test")
+
+test_data = load_test_folder("lyric")
 test_texts = [lyric for _, lyric in sorted(test_data, key=lambda x: x[0])]
 filenames = [filename for filename, _ in sorted(test_data, key=lambda x: x[0])]
 
@@ -54,9 +55,9 @@ results = []
 for i in range(len(test_dataset)):
     token = test_dataset[i].unsqueeze(0).to(device)
     with torch.no_grad():
-        pred = model(token)
-        valence = pred[0][0].item()
-        energy = pred[0][1].item()
+        feature, output = model(token)
+        valence = output[0][0].item()
+        energy = output[0][1].item()
     results.append([filenames[i], valence, energy])
 
 # Write predictions to CSV
