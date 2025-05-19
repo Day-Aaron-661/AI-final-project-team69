@@ -135,7 +135,7 @@ with torch.no_grad():
         audios_feature_test = audio_model(audio) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.validate()
         lyrics_feature_test = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
 
-        predict_value_test = fusion_model(audios_feature_val, lyrics_feature_val)
+        predict_value_test = fusion_model(audios_feature_test, lyrics_feature_test)
 
         test_loss = criterion(predict_value_test, labels)
         test_losses.append(test_loss)
@@ -143,3 +143,9 @@ with torch.no_grad():
 
 avg_test_loss = total_test_loss / len(test_loader)
 print(f"Epoch: {epoch+1} finished - Test Loss: {avg_test_loss:.4f}")
+
+
+#///////////////////////////////////////////////////////////////////////////#
+                                # p l o t
+#///////////////////////////////////////////////////////////////////////////#
+# output 一些圖表
