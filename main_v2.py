@@ -13,7 +13,7 @@ from torch import nn , optim
 
 audio_model = AudioCNN()
 text_model = TextEncoder()
-fusion_model = LateFusionModel( audio_dim=128 , text_dim=768 , output_dim=2 )
+fusion_model = LateFusionModel( audio_dim=128 , text_dim=128 , output_dim=2 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 audio_model = audio_model().to(device)
