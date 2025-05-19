@@ -24,7 +24,7 @@ fusion_model = fusion_model().to(device)
 #///////////////////////////////////////////////////////////////////////////#
                           # L o a d  D a t a 
 #///////////////////////////////////////////////////////////////////////////#
-#這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中
+#這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
 train_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'train' ) 
 train_loader = DataLoader( train_dataset , batch_size = 'TBD' , shuffle = True )      #load training data (三合一)示意
