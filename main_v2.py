@@ -115,3 +115,31 @@ print(f"Epoch: {epoch+1} finished - Val Loss: {avg_val_loss:.4f}")
                               # t e s t i n g 
 #///////////////////////////////////////////////////////////////////////////#
 # 這區域對 fusion_model 做 testing，到時候要搬進 fusion_model.py
+
+print( "validate session" )
+
+audio_model.eval()
+text_model.eval()
+fusion_model.eval()
+
+test_losses = []
+
+total_test_loss = 0
+
+with torch.no_grad():
+    for audios, lyrics, labels in test_loader:
+        audio = audio.to(device)
+        lyrics = lyrics.to(device)
+        labels = labels.to(device)
+
+        audios_feature_test = audio_model(audio) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.validate()
+        lyrics_feature_test = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
+
+        predict_value_test = fusion_model(audios_feature_val, lyrics_feature_val)
+
+        test_loss = criterion(predict_value_test, labels)
+        test_losses.append(test_loss)
+        total_test_loss += test_loss.item()
+
+avg_test_loss = total_test_loss / len(test_loader)
+print(f"Epoch: {epoch+1} finished - Test Loss: {avg_test_loss:.4f}")
