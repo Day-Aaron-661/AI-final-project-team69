@@ -35,6 +35,7 @@ val_loader = DataLoader( val_dataset , batch_size = 'TBD' , shuffle = True )    
 test_dataset = MusicDataset( csv_path = 'TBD' , audio_dir = 'TBD' , lyric_path = 'TBD' , split = 'test' ) 
 test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )        #load test data (三合一)示意
 
+
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
 #///////////////////////////////////////////////////////////////////////////#
