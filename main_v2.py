@@ -38,7 +38,7 @@ test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )  
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
 #///////////////////////////////////////////////////////////////////////////#
-# 這區域對 fusion_model 做 training，到時候把 for 迴圈留著然後在 fusion_model.py 做 validate function
+# 這區域對 fusion_model 做 training，到時候把 for 迴圈留著然後在 fusion_model.py 做 train function
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam( fusion_model.parameters() , lr=1e-4 )
