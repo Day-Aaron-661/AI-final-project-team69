@@ -26,13 +26,13 @@ fusion_model = fusion_model().to(device)
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-train_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , split = 'train' ) 
+train_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'train' ) 
 train_loader = DataLoader( train_dataset , batch_size = 'TBD' , shuffle = True )      #load training data (三合一)示意
 
-val_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , split = 'validate' ) 
+val_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'validate' ) 
 val_loader = DataLoader( val_dataset , batch_size = 'TBD' , shuffle = True )          #load validate data (三合一)示意
 
-test_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , split = 'test' ) 
+test_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'test' ) 
 test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )        #load test data (三合一)示意
 
 
