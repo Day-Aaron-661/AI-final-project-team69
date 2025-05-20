@@ -6,6 +6,8 @@ import torch
 from  torch.utils.data import DataLoader , Dataset
 from torch import nn , optim
 
+import dataset
+from dataset import Combined_Dataset
 
 #///////////////////////////////////////////////////////////////////////////#
                           # I n i t i a l i z e
@@ -26,15 +28,15 @@ fusion_model = fusion_model().to(device)
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-train_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'train' ) 
-train_loader = DataLoader( train_dataset , batch_size = 'TBD' , shuffle = True )      #load training data (三合一)示意
+train_ids , train_labels = dataset.get_label_and_id( csv_path='TBD' , Type='train' )
+train_audios_paths = dataset.get_audios_paths( train_ids , audio_file_path='TBD' )
+train_lyrics_paths = dataset.get_lyrics_paths( train_ids , lyric_file_path='TBD' )
 
-val_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'validate' ) 
-val_loader = DataLoader( val_dataset , batch_size = 'TBD' , shuffle = True )          #load validate data (三合一)示意
+train_audios = dataset.load_audio( train_audios_paths )
+train_lyrics = dataset.load_lyric( train_lyrics_paths )
 
-test_dataset = MusicDataset( csv_path = 'TBD' , audio_path = 'TBD' , lyric_path = 'TBD' , Type = 'test' ) 
-test_loader = DataLoader( test_dataset , batch_size = 'TBD' , shuffle = True )        #load test data (三合一)示意
-
+train_dataset = Combined_Dataset ( train_audios , train_lyrics , train_labels )
+train_dataloader = DataLoader( train_dataset , batch_size='TBD' , shuffle=True )
 
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
