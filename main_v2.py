@@ -1,5 +1,5 @@
 from CNN import AudioCNN
-#from lyric_model import CNNModel
+from lyrics_model import ( Vocab , CNNModel )
 #from fusion_model import LateFusionModel #名稱之後會改
 
 import torch
@@ -7,14 +7,17 @@ from  torch.utils.data import DataLoader , Dataset
 from torch import nn , optim
 
 import dataset
-from dataset import Combined_Dataset
+from dataset import ( Combined_Dataset , tokenize , get_audios_paths ,
+                      get_ids_and_labels , get_lyrics_paths , load_audio ,
+                      load_lyric )
+
 
 #///////////////////////////////////////////////////////////////////////////#
                           # I n i t i a l i z e
 #///////////////////////////////////////////////////////////////////////////#
 
 audio_model = AudioCNN()
-text_model = TextEncoder()
+text_model = CNNModel()
 fusion_model = LateFusionModel( audio_dim=128 , text_dim=128 , output_dim=2 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,21 +25,27 @@ audio_model = audio_model().to(device)
 text_model = text_model().to(device)
 fusion_model = fusion_model().to(device)
 
+max_len = 2000
 
 #///////////////////////////////////////////////////////////////////////////#
                           # L o a d  D a t a 
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-train_ids , train_labels = dataset.get_label_and_id( csv_path='TBD' , Type='train' )
-train_audios_paths = dataset.get_audios_paths( train_ids , audio_file_path='TBD' )
-train_lyrics_paths = dataset.get_lyrics_paths( train_ids , lyric_file_path='TBD' )
+train_ids , train_labels = get_ids_and_labels( csv_path='TBD' , Type='train' )
+train_audios_paths = get_audios_paths( train_ids , audio_file_path='TBD' )
+train_lyrics_paths = get_lyrics_paths( train_ids , lyric_file_path='TBD' )
 
-train_audios = dataset.load_audio( train_audios_paths )
-train_lyrics = dataset.load_lyric( train_lyrics_paths )
+train_audios = load_audio( train_audios_paths )
+train_lyrics = load_lyric( train_lyrics_paths )
+
+vocab = Vocab( train_lyrics )
+vocab.save_to_txt("vocab.txt")
+
+train_lyrics = [tokenize(t, vocab, max_len) for t in train_lyrics] #把 text tokenize 
 
 train_dataset = Combined_Dataset ( train_audios , train_lyrics , train_labels )
-train_dataloader = DataLoader( train_dataset , batch_size='TBD' , shuffle=True )
+train_loader = DataLoader( train_dataset , batch_size='TBD' , shuffle=True )
 
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
@@ -62,7 +71,7 @@ for epoch in range(EPOCHS):
         audios , lyrics , labels = audios.to(device), lyrics.to(device), labels.to(device)
 
         audios_feature = audio_model(audios) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.train()
-        lyrics_feature = text_model(lyrics)  #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.train()
+        lyrics_feature , _ = text_model(lyrics)  #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.train()
 
         predict_value = fusion_model( audios_feature , lyrics_feature )
 
@@ -100,7 +109,7 @@ with torch.no_grad():
         labels = labels.to(device)
 
         audios_feature_val = audio_model(audio) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.validate()
-        lyrics_feature_val = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
+        lyrics_feature_val , _ = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
 
         predict_value_val = fusion_model(audios_feature_val, lyrics_feature_val)
 
@@ -135,7 +144,7 @@ with torch.no_grad():
         labels = labels.to(device)
 
         audios_feature_test = audio_model(audio) #得到 audio feature_vector，到時候作為 input 送給 fusion_model.validate()
-        lyrics_feature_test = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
+        lyrics_feature_test , _ = text_model(lyrics) #得到 lyric feature_vector，到時候作為 input 送給 fusion_model.validate()
 
         predict_value_test = fusion_model(audios_feature_test, lyrics_feature_test)
 
