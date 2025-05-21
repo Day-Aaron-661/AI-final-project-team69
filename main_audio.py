@@ -77,9 +77,9 @@ for epoch in range(EPOCHS): #epoch
     val_losses.append(val_loss)
 
     if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            torch.save(audio_model.state_dict(), "best_model_audio.pt")
-            print("Best model saved!")
+          best_val_loss = val_loss
+          torch.save(audio_model.state_dict(), "best_model_audio.pt")
+          print("Best model saved!")
    
     print ( "Training CNN .......... epoch =" , epoch , 
             " finished "   ", value_loss =" , val_loss ,
