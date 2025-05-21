@@ -1,6 +1,6 @@
 from CNN import AudioCNN
 from lyrics_model import ( Vocab , CNNModel )
-#from fusion_model import LateFusionModel #名稱之後會改
+#from fusion_model import FusionModel #名稱之後會改
 
 import torch
 from  torch.utils.data import DataLoader , Dataset
@@ -18,7 +18,7 @@ from dataset import ( Combined_Dataset , tokenize , get_audios_paths ,
 
 audio_model = AudioCNN()
 text_model = CNNModel()
-fusion_model = LateFusionModel( audio_dim=128 , text_dim=128 , output_dim=2 )
+fusion_model = FusionModel( audio_dim=128 , text_dim=128 , output_dim=2 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 audio_model = audio_model().to(device)
@@ -28,7 +28,7 @@ fusion_model = fusion_model().to(device)
 max_len = 2000
 
 #///////////////////////////////////////////////////////////////////////////#
-                          # L o a d  D a t a 
+                       # L o a d  D a t a ( train )
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels) 放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
@@ -39,13 +39,51 @@ train_lyrics_paths = get_lyrics_paths( train_ids , lyric_file_path='TBD' )
 train_audios = load_audio( train_audios_paths )
 train_lyrics = load_lyric( train_lyrics_paths )
 
-vocab = Vocab( train_lyrics )
-vocab.save_to_txt("vocab.txt")
+vocab_train = Vocab( train_lyrics )
+#vocab_train.save_to_txt("vocab.txt")
 
-train_lyrics = [tokenize(t, vocab, max_len) for t in train_lyrics] #把 text tokenize 
+train_lyrics = [tokenize(t, vocab_train, max_len) for t in train_lyrics] #把 text tokenize 
 
 train_dataset = Combined_Dataset ( train_audios , train_lyrics , train_labels )
 train_loader = DataLoader( train_dataset , batch_size='TBD' , shuffle=True )
+
+#///////////////////////////////////////////////////////////////////////////#
+                     # L o a d  D a t a ( validate )
+#///////////////////////////////////////////////////////////////////////////#
+
+val_ids , val_labels = get_ids_and_labels( csv_path='TBD' , Type='validate' )
+val_audios_paths = get_audios_paths( val_ids , audio_file_path='TBD' )
+val_lyrics_paths = get_lyrics_paths( val_ids , lyric_file_path='TBD' )
+
+val_audios = load_audio( val_audios_paths )
+val_lyrics = load_lyric( val_lyrics_paths )
+
+vocab_val = Vocab( val_lyrics )
+#vocab_test.save_to_txt("vocab.txt")
+
+val_lyrics = [tokenize(t, vocab_val, max_len) for t in val_lyrics] #把 text tokenize 
+
+val_dataset = Combined_Dataset ( val_audios , val_lyrics , val_labels )
+val_loader = DataLoader( val_dataset , batch_size='TBD' , shuffle=True )
+
+#///////////////////////////////////////////////////////////////////////////#
+                       # L o a d  D a t a ( test )
+#///////////////////////////////////////////////////////////////////////////#
+
+test_ids , test_labels = get_ids_and_labels( csv_path='TBD' , Type='validate' )
+test_audios_paths = get_audios_paths( test_ids , audio_file_path='TBD' )
+test_lyrics_paths = get_lyrics_paths( test_ids , lyric_file_path='TBD' )
+
+test_audios = load_audio( test_audios_paths )
+test_lyrics = load_lyric( test_lyrics_paths )
+
+vocab_test = Vocab( test_lyrics )
+#vocab_test.save_to_txt("vocab.txt")
+
+test_lyrics = [tokenize(t, vocab_test, max_len) for t in test_lyrics] #把 text tokenize 
+
+test_dataset = Combined_Dataset ( test_audios , test_lyrics , test_labels )
+test_loader = DataLoader( test_dataset , batch_size='TBD' , shuffle=True )
 
 #///////////////////////////////////////////////////////////////////////////#
                             # t r a i n i n g
