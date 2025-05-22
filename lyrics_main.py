@@ -45,7 +45,7 @@ model.eval()
 
 # Load test lyrics
 
-test_data = load_test_folder("lyric")
+test_data = load_test_folder("data\lyrics")
 test_texts = [lyric for _, lyric in sorted(test_data, key=lambda x: x[0])]
 filenames = [filename for filename, _ in sorted(test_data, key=lambda x: x[0])]
 
