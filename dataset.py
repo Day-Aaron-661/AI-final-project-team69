@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from CNN import mp3_to_mel
+from audio_model import mp3_to_mel
 from torch.utils.data import Dataset
 
 class Combined_Dataset(Dataset):
