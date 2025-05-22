@@ -11,8 +11,8 @@ from lyrics_model import (
 )
 
 # Load training and validation data
-train_texts, train_valence, train_energy = load_lyrics_folder("lyric", "id_energy_valence.csv")
-val_texts, val_valence, val_energy = load_lyrics_folder("lyric", "id_energy_valence.csv")
+train_texts, train_valence, train_energy = load_lyrics_folder("data\lyrics", "data\labels.csv")
+val_texts, val_valence, val_energy = load_lyrics_folder("data\lyrics", "data\labels.csv")
 
 # Build and save vocab
 vocab = Vocab(train_texts)
@@ -58,12 +58,12 @@ for i in range(len(test_dataset)):
         feature, output = model(token)
         valence = output[0][0].item()
         energy = output[0][1].item()
-    results.append([filenames[i], valence, energy])
+    results.append([filenames[i], energy, valence])
 
 # Write predictions to CSV
 with open("test_predictions.csv", "w", newline="", encoding="utf-8") as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(["filename", "valence", "energy"])
+    writer.writerow(["filename", "energy", "valence"])
     writer.writerows(results)
 
 print("Prediction saved to test_predictions.csv")
