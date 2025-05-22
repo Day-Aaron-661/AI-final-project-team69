@@ -27,7 +27,7 @@ batch_size = 16  # Set your desired batch size
 #///////////////////////////////////////////////////////////////////////////#
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels)放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-train_ids, train_labels = get_ids_and_labels(csv_path='data/train_labels.csv', Type='train')
+train_ids, train_labels = get_ids_and_labels(csv_path='data/labels.csv', Type='train')
 train_audios_paths = get_audios_paths(train_ids, audio_file_path='data/audio/')
 train_lyrics_paths = get_lyrics_paths(train_ids, lyric_file_path='data/lyrics/')
 
@@ -50,7 +50,7 @@ fusion_model = FusionModel(audio_dim=128, text_dim=128, output_dim=2).to(device)
                      # L o a d  D a t a ( validate )
 #///////////////////////////////////////////////////////////////////////////#
 
-val_ids, val_labels = get_ids_and_labels(csv_path='data/val_labels.csv', Type='validate')
+val_ids, val_labels = get_ids_and_labels(csv_path='data/labels.csv', Type='validate')
 val_audios_paths = get_audios_paths(val_ids, audio_file_path='data/audio/')
 val_lyrics_paths = get_lyrics_paths(val_ids, lyric_file_path='data/lyrics/')
 
@@ -68,7 +68,7 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels)
 #放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-test_ids, test_labels = get_ids_and_labels(csv_path='data/test_labels.csv', Type='test')
+test_ids, test_labels = get_ids_and_labels(csv_path='data/labels.csv', Type='test')
 test_audios_paths = get_audios_paths(test_ids, audio_file_path='data/audio/')
 test_lyrics_paths = get_lyrics_paths(test_ids, lyric_file_path='data/lyrics/')
 

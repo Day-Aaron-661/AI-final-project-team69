@@ -52,7 +52,7 @@ def load_lyric( lyric_paths ):
 def get_ids_and_labels( csv_path , Type ):
 
     data = pd.read_csv(csv_path)
-    data = data[data['Type'] == Type].reset_index(drop=True)
+    data = data[data['type'] == Type].reset_index(drop=True)
     data = data.sort_values("id").reset_index(drop=True)
 
     ids = data['id']
@@ -75,7 +75,7 @@ def get_lyrics_paths ( ids , lyric_file_path ):
     lyric_paths = []
 
     for song_id in ids:
-        lyric_path = os.path.join(lyric_file_path, f"{song_id}.mp3")
+        lyric_path = os.path.join(lyric_file_path, f"{song_id}.txt")
         lyric_paths.append( lyric_path )
     
     return lyric_paths
