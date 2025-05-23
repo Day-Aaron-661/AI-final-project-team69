@@ -1,4 +1,4 @@
-from CNN import ( AduioCNN_solo , train , validate , test )
+from audio_model import ( AduioCNN_solo , train , validate , test )
 
 import torch
 from  torch.utils.data import DataLoader , Dataset
