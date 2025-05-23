@@ -5,9 +5,8 @@ from  torch.utils.data import DataLoader , Dataset
 from torch import nn , optim
 
 import dataset
-from dataset import ( Audio_solo_Dataset , tokenize , get_audios_paths ,
-                      get_ids_and_labels , get_lyrics_paths , load_audio ,
-                      load_lyric )
+from dataset import ( Audio_solo_Dataset , get_audios_paths ,
+                      get_ids_and_labels , load_audio )
 
 
 #///////////////////////////////////////////////////////////////////////////#
