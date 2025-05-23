@@ -19,6 +19,7 @@ audio_model = audio_model.to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam( audio_model.parameters() , lr=1e-4 )
 
+
 #///////////////////////////////////////////////////////////////////////////#
                        # L o a d  D a t a ( train )
 #///////////////////////////////////////////////////////////////////////////#
@@ -74,10 +75,10 @@ for epoch in range(EPOCHS): #epoch
     train_losses.append(train_loss)
     val_losses.append(val_loss)
 
-    if val_loss < best_val_loss:
-          best_val_loss = val_loss
-          torch.save(audio_model.state_dict(), "best_model_audio.pt")
-          print("Best model saved!")
+#     if val_loss < best_val_loss:
+#           best_val_loss = val_loss
+#           torch.save(audio_model.state_dict(), "best_model_audio.pt")
+#           print("Best model saved!")
    
     print ( "Training CNN .......... epoch =" , epoch , 
             " finished "   ", value_loss =" , val_loss ,)
