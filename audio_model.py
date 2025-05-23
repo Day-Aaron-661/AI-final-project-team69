@@ -29,6 +29,7 @@ class AudioCNN(nn.Module):
 
         self.fc = nn.Linear(64,128)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward ( self , x ):
         x = self.conv1(x)
@@ -45,6 +46,7 @@ class AudioCNN(nn.Module):
 
         x = x.view( x.size(0) , -1 )    
         x = self.fc(x)
+        x = self.sigmoid(x)
 
         return x
     
@@ -95,6 +97,7 @@ class AudioCNN_solo(nn.Module):
         self.fc1 = nn.Linear(64,128)
         self.fc2 = nn.Linear(128,2)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward ( self , x ):
         x = self.conv1(x)
@@ -113,9 +116,21 @@ class AudioCNN_solo(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-
+        x = self.sigmoid(x)
         return x
     
+
+
+
+    def forward ( self , x ):
+       
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc_layers(x)
+
+        return x
 
 
 def train(model: AudioCNN_solo, train_loader: DataLoader, criterion, optimizer, device) -> float:
@@ -124,19 +139,19 @@ def train(model: AudioCNN_solo, train_loader: DataLoader, criterion, optimizer, 
     total_loss = 0.0
     progress = tqdm( train_loader , desc= 'Training', leave= False)
 
-    for audio , labels in progress:
+    for audios , labels in progress:
         labels = labels.to(device)
-        audio = audio.to(device)
+        audios = audios.to(device)
 
         optimizer.zero_grad()
-        outputs = model(audio)
+        outputs = model(audios)
 
         loss = criterion(outputs , labels)
         
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.item() * audio.size(0)
+        total_loss += loss.item() * audios.size(0)
     
     avg_loss = total_loss / len( train_loader.dataset)
 
@@ -148,24 +163,18 @@ def validate(model: AudioCNN_solo, val_loader: DataLoader, criterion, device) ->
     model.eval()
     
     total_loss = 0.0
-    correct = 0
+    
     with torch.no_grad():
         progress = tqdm( val_loader , desc= 'validating', leave= False)
 
-        for images , labels in progress:
+        for audios , labels in progress:
             labels = labels.to(device)
-            images = images.to(device)
+            audios = audios.to(device)
 
-            outputs = model(images)
+            outputs = model(audios)
 
             loss = criterion(outputs , labels)
-            total_loss += loss.item() * images.size(0)
-
-            trash , predict = torch.max(outputs , 1)
-            
-            comparison = ( predict == labels )
-            tensor_sum = comparison.sum()
-            correct += tensor_sum.item()
+            total_loss += loss.item() * audios.size(0)
     
     avg_loss = total_loss / len( val_loader.dataset)
     
@@ -179,17 +188,20 @@ def test(model: AudioCNN_solo, test_loader: DataLoader, criterion, device):
 
     progress = tqdm( test_loader , desc='Testing' , leave=False )
 
-    for audio , audio_id in progress:
-        audio = audio.to(device)
+    for audios , audio_ids in progress:
+        audios = audios.to(device)
 
-        outputs = model(audio)
+        outputs = model(audios)
 
-        trash , predict = torch.max ( outputs , 1 )
-        
-        results.extend(zip( audio_id , predict.cpu().numpy() ) )
+        energies = outputs[:, 1].tolist() 
+        valences = outputs[:, 0].tolist()
+        audio_ids = audio_ids.tolist()
 
-    test_data = pd.DataFrame( results , columns=['id' , 'prediction'])
-    test_data.to_csv('CNN_solo.csv' , index=False)
+        for audio_id, energy, valence in zip(audio_ids, energies, valences):
+            results.append([audio_id, energy, valence])
 
-    print(f"Predictions saved to 'CNN.csv'")
+    test_data = pd.DataFrame( results , columns=['id' , 'energy' , 'valence'])
+    test_data.to_csv('audio_predictions.csv' , index=False)
+
+    print(f"Predictions saved to 'audio_predictions.csv'")
     return
