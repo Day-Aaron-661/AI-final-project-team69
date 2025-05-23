@@ -4,7 +4,7 @@ from fusion_model import FusionModel
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torch import nn, optim
-
+import pandas as pd
 import dataset
 from dataset import (
     Combined_Dataset, tokenize, get_audios_paths,
@@ -68,7 +68,7 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 #這部分從 dataset load data，把三種data(audio.mp3 , lyric.txt , labels)
 #放進同一個 data_loader 中，之後把 data_loader 送進 fusion_model
 
-test_ids, test_labels = get_ids_and_labels(csv_path='data//labels.csv', Type='test')
+test_ids, test_labels = get_ids_and_labels(csv_path='data//labels.csv', Type='train')
 test_audios_paths = get_audios_paths(test_ids, audio_file_path='data//audio')
 test_lyrics_paths = get_lyrics_paths(test_ids, lyric_file_path='data//lyrics')
 
@@ -77,7 +77,7 @@ test_lyrics = load_lyric(test_lyrics_paths)
 
 test_lyrics = [tokenize(t, vocab_train, max_len) for t in test_lyrics]  # 把 text tokenize
 
-test_dataset = Combined_Dataset(test_audios, test_lyrics, test_labels)
+test_dataset = Combined_Dataset(test_audios, test_lyrics, test_ids)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
 #///////////////////////////////////////////////////////////////////////////#
@@ -166,9 +166,10 @@ fusion_model.eval()
 
 test_losses = []
 total_test_loss = 0
+results = []
 
 with torch.no_grad():
-    for audios, lyrics, labels in test_loader:
+    for audios, lyrics, audio_ids in test_loader:
         audios = audios.to(device)
         lyrics = lyrics.to(device)
         labels = labels.to(device)
@@ -178,12 +179,24 @@ with torch.no_grad():
 
         predict_value_test = fusion_model(audios_feature_test, lyrics_feature_test)
 
-        test_loss = criterion(predict_value_test, labels)
-        test_losses.append(test_loss.item())
-        total_test_loss += test_loss.item()
+        # test_loss = criterion(predict_value_test, labels)
+        # test_losses.append(test_loss.item())
+        # total_test_loss += test_loss.item()
 
-avg_test_loss = total_test_loss / len(test_loader)
-print(f"Epoch: {epoch+1} finished - Test Loss: {avg_test_loss:.4f}")
+        energies = predict_value_test[:, 1].tolist() 
+        valences = predict_value_test[:, 0].tolist()
+        audio_ids = audio_ids.tolist()
+
+        for audio_id, energy, valence in zip(audio_ids, energies, valences):
+            results.append([audio_id, energy, valence])
+
+    test_data = pd.DataFrame( results , columns=['id' , 'energy' , 'valence'])
+    test_data.to_csv('fusion_predictions.csv' , index=False)
+
+    print(f"Predictions saved to 'fusion_predictions.csv'")
+
+# avg_test_loss = total_test_loss / len(test_loader)
+# print(f"Epoch: {epoch+1} finished - Test Loss: {avg_test_loss:.4f}")
 
 
 #///////////////////////////////////////////////////////////////////////////#
