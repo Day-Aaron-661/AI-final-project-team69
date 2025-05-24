@@ -13,7 +13,7 @@ import pandas as pd
 #///////////////////////////////////////////////////////////////////////////#
 
 class AudioCNN(nn.Module):
-    def __init__(self , n_mels = 128 , fixed_frame = 128 ):
+    def __init__(self , n_mels = 256 , fixed_frame = 1024 ):
         super(AudioCNN, self).__init__()
         self.n_mels = n_mels
         self.fixed_frame = fixed_frame
@@ -25,11 +25,12 @@ class AudioCNN(nn.Module):
         self.pool2 = nn.MaxPool2d( kernel_size=2 )
 
         self.conv3 = nn.Conv2d( in_channels=32 , out_channels=64 , kernel_size=3 , padding=1 )
-        self.pool3 = nn.AdaptiveAvgPool2d((1,1))
+        self.pool3 = nn.MaxPool2d( kernel_size=2)
 
-        self.fc = nn.Linear(64,128)
+        self.fc1 = nn.Linear(64 * 32 * 128 ,2048)
+        self.fc2 = nn.Linear(2048,128)
+
         self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
 
     def forward ( self , x ):
         x = self.conv1(x)
@@ -45,8 +46,9 @@ class AudioCNN(nn.Module):
         x = self.pool3(x)
 
         x = x.view( x.size(0) , -1 )    
-        x = self.fc(x)
-        x = self.sigmoid(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
 
         return x
     
@@ -56,7 +58,7 @@ class AudioCNN(nn.Module):
                           # M p 3 to mel-spectrogram 
 #///////////////////////////////////////////////////////////////////////////#
 
-def mp3_to_mel( file_path , sr=22050 , n_mels=128, fixed_frames=128 , duration=30 ):
+def mp3_to_mel( file_path , sr=22050 , n_mels=256, fixed_frames=1024 , duration=30 ):
     y, _ = librosa.load(file_path , sr = sr , duration = duration )
     mel = librosa.feature.melspectrogram( y = y , sr = sr , n_mels = n_mels )
     mel = librosa.power_to_db(mel , ref=np.max )
@@ -80,44 +82,49 @@ def mp3_to_mel( file_path , sr=22050 , n_mels=128, fixed_frames=128 , duration=3
 
 
 class AudioCNN_solo(nn.Module):
-    def __init__(self , n_mels = 128 , fixed_frame = 128 ):
+    def __init__(self , n_mels = 256 , fixed_frame = 1024 ):
         super(AudioCNN_solo, self).__init__()
         self.n_mels = n_mels
         self.fixed_frame = fixed_frame
 
         self.conv1 = nn.Conv2d( in_channels=1 , out_channels=16 , kernel_size=3 , padding=1 )
-        self.pool1 = nn.MaxPool2d( kernel_size=2 )
+        self.pool1 = nn.MaxPool2d( kernel_size=2 ) # 16 , 16 , 128 ,512
 
         self.conv2 = nn.Conv2d( in_channels=16 , out_channels=32 , kernel_size=3 , padding=1 )
-        self.pool2 = nn.MaxPool2d( kernel_size=2 )
+        self.pool2 = nn.MaxPool2d( kernel_size=2 ) # 16 , 32 , 64 ,256
 
         self.conv3 = nn.Conv2d( in_channels=32 , out_channels=64 , kernel_size=3 , padding=1 )
-        self.pool3 = nn.AdaptiveAvgPool2d((1,1))
+        self.pool3 = nn.MaxPool2d( kernel_size=2 ) # 16 , 64 , 32 , 128
 
-        self.fc1 = nn.Linear(64,128)
-        self.fc2 = nn.Linear(128,2)
+        self.fc1 = nn.Linear(64 * 32 * 128 ,2048)
+        self.fc2 = nn.Linear(2048,128)
+        self.fc3 = nn.Linear(128,2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
     def forward ( self , x ):
         x = self.conv1(x)
-        x = F.relu(x)
+        x = self.relu(x)
         x = self.pool1(x)
 
         x = self.conv2(x)
-        x = F.relu(x)
+        x = self.relu(x)
         x = self.pool2(x)
 
         x = self.conv3(x)
-        x = F.relu(x)
+        x = self.relu(x)
         x = self.pool3(x)
 
         x = x.view( x.size(0) , -1 )    
         x = self.fc1(x)
-        x = F.relu(x)
+        x = self.relu(x)
         x = self.fc2(x)
+        x = self.relu(x)
+        x = self.fc3(x)
+
         x = self.sigmoid(x)
         return x
+    
 
 
 def train(model: AudioCNN_solo, train_loader: DataLoader, criterion, optimizer, device) -> float:
@@ -180,8 +187,8 @@ def test(model: AudioCNN_solo, test_loader: DataLoader, criterion, device):
 
         outputs = model(audios)
 
-        energies = outputs[:, 1].tolist() 
-        valences = outputs[:, 0].tolist()
+        energies = outputs[:, 0].tolist() 
+        valences = outputs[:, 1].tolist()
         audio_ids = audio_ids.tolist()
 
         for audio_id, energy, valence in zip(audio_ids, energies, valences):
