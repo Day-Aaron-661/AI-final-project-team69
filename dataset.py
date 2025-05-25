@@ -18,13 +18,23 @@ class Combined_Dataset(Dataset):
     def __getitem__(self, idx):
         return self.audios[idx], self.lyrics[idx], self.labels[idx]
 
+class Audio_solo_Dataset(Dataset):
+    def __init__(self, audios ,labels ):
+        self.audios = audios
+        self.labels = labels  
+
+    def __len__(self):
+
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.audios[idx], self.labels[idx]
     
 def load_audio( audio_paths ):
 
     audios = []
 
     for audio_path in audio_paths:
-
         if os.path.exists(audio_path):
             audio = mp3_to_mel(audio_path)
             audios.append(audio)
@@ -56,7 +66,8 @@ def get_ids_and_labels( csv_path , Type ):
     data = data.sort_values("id").reset_index(drop=True)
 
     ids = data['id']
-    labels = data[['energy','valence']].to_numpy()
+    labels = torch.tensor(data[['energy', 'valence']].values, dtype=torch.float32)
+
     
     return ids , labels
 
