@@ -17,41 +17,56 @@ class AudioCNN(nn.Module):
         self.n_mels = n_mels
         self.fixed_frame = fixed_frame
 
-        self.conv1 = nn.Conv2d( in_channels=1 , out_channels=16 , kernel_size=3 , padding=1 )
-        self.pool1 = nn.MaxPool2d( kernel_size=2 ) # 16 , 16 , 64 ,512
+        self.conv1 = nn.Conv2d(1, 16, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.pool1 = nn.MaxPool2d(2)
+        self.dropout1 = nn.Dropout(0.1)
 
-        self.conv2 = nn.Conv2d( in_channels=16 , out_channels=32 , kernel_size=3 , padding=1 )
-        self.pool2 = nn.MaxPool2d( kernel_size=2 ) # 16 , 32 , 32 ,256
+        self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.pool2 = nn.MaxPool2d(2)
+        self.dropout2 = nn.Dropout(0.1)
 
-        self.conv3 = nn.Conv2d( in_channels=32 , out_channels=64 , kernel_size=3 , padding=1 )
-        self.pool3 = nn.MaxPool2d( kernel_size=2 ) # 16 , 64 , 16 , 128
+        self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)
+        self.pool3 = nn.MaxPool2d(2)
+        self.dropout3 = nn.Dropout(0.1)
 
-        self.fc1 = nn.Linear(64 * 16 * 128 ,128)
-        self.fc2 = nn.Linear(128,2)
+        self.fc1 = nn.Linear(64 * 16 * 128, 128)
+        self.dropout_fc = nn.Dropout(0.1)
+        self.fc2 = nn.Linear(128, 2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
     def forward ( self , x ):
         x = self.conv1(x)
+        x = self.bn1(x)##
         x = self.relu(x)
         x = self.pool1(x)
+        x = self.dropout1(x)##
 
         x = self.conv2(x)
+        x = self.bn2(x)##
         x = self.relu(x)
         x = self.pool2(x)
+        x = self.dropout2(x)##
 
         x = self.conv3(x)
+        x = self.bn3(x)##
         x = self.relu(x)
         x = self.pool3(x)
+        x = self.dropout3(x)##
+        # print("Shape after pool3:", x.shape) 
+
 
         x = x.view( x.size(0) , -1 )    
 
         feature = self.fc1(x) # 128
         output = self.relu(feature) 
-
+        output = self.dropout_fc(output)##
         output = self.fc2(output)
 
-        output = self.sigmoid(output) # 2
+        # output = self.sigmoid(output) # 2
         return feature , output
     
 
