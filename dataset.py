@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from audio_model import mp3_to_mel
+from make_mel import mp3_to_mel
 from torch.utils.data import Dataset
 
 class Combined_Dataset(Dataset):
@@ -18,7 +18,7 @@ class Combined_Dataset(Dataset):
     def __getitem__(self, idx):
         return self.audios[idx], self.lyrics[idx], self.labels[idx]
 
-class Audio_solo_Dataset(Dataset):
+class Audio_Dataset(Dataset):
     def __init__(self, audios ,labels ):
         self.audios = audios
         self.labels = labels  
@@ -35,9 +35,11 @@ def load_audio( audio_paths ):
     audios = []
 
     for audio_path in audio_paths:
-        if os.path.exists(audio_path):
+        if audio_path.endswith('.pt'):
+            audio = torch.load(audio_path)
+        elif audio_path.endswith('.mp3'):
             audio = mp3_to_mel(audio_path)
-            audios.append(audio)
+        audios.append(audio)
     
     return audios
 
@@ -68,17 +70,21 @@ def get_ids_and_labels( csv_path , Type ):
     ids = data['id']
     labels = torch.tensor(data[['energy', 'valence']].values, dtype=torch.float32)
 
-    
     return ids , labels
 
 def get_audios_paths ( ids , audio_file_path ):
 
     audio_paths = []
-
+    mel_tensor_path = 'mel_tensors'
     for song_id in ids:
-        audio_path = os.path.join(audio_file_path, f"{song_id}.mp3")
-        audio_paths.append( audio_path )
-    
+        pt_path = os.path.join(mel_tensor_path, f"{song_id}.pt")
+        mp3_path = os.path.join(audio_file_path, f"{song_id}.mp3")
+
+        if os.path.exists(pt_path):
+            audio_paths.append(pt_path)
+        elif os.path.exists(mp3_path):
+            audio_paths.append(mp3_path)
+
     return audio_paths
 
 def get_lyrics_paths ( ids , lyric_file_path ):

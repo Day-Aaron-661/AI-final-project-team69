@@ -1,5 +1,5 @@
 from audio_model import ( AudioCNN , train , validate , test )
-
+from make_mel import process_all_mp3_to_pt
 import torch
 from  torch.utils.data import DataLoader , Dataset
 from torch import nn , optim
@@ -19,13 +19,14 @@ audio_model = audio_model.to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam( audio_model.parameters() , lr=1e-4 )
 
+#process_all_mp3_to_pt( audio_dir='data//audio' )
 
 #///////////////////////////////////////////////////////////////////////////#
                        # L o a d  D a t a ( train )
 #///////////////////////////////////////////////////////////////////////////#
 
-train_ids , train_labels = get_ids_and_labels( csv_path='data\\labels.csv' , Type='train' )
-train_audios_paths = get_audios_paths( train_ids , audio_file_path='data\\audio' )
+train_ids , train_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='train' )
+train_audios_paths = get_audios_paths( train_ids , audio_file_path='data//audio' )
 
 train_audios = load_audio( train_audios_paths )
 
@@ -37,8 +38,8 @@ train_loader = DataLoader( train_dataset , batch_size=16 , shuffle=True )
                      # L o a d  D a t a ( validate )
 #///////////////////////////////////////////////////////////////////////////#
 
-val_ids , val_labels = get_ids_and_labels( csv_path='data\\labels.csv' , Type='validate' )
-val_audios_paths = get_audios_paths( val_ids , audio_file_path='data\\audio' )
+val_ids , val_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='validate' )
+val_audios_paths = get_audios_paths( val_ids , audio_file_path='data//audio' )
 
 val_audios = load_audio( val_audios_paths )
 
@@ -50,8 +51,8 @@ val_loader = DataLoader( val_dataset , batch_size=16 , shuffle=True )
                        # L o a d  D a t a ( test )
 #///////////////////////////////////////////////////////////////////////////#
 
-test_ids , test_labels = get_ids_and_labels( csv_path='data\\labels.csv' , Type='train' )
-test_audios_paths = get_audios_paths( test_ids , audio_file_path='data\\audio' )
+test_ids , test_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='test' )
+test_audios_paths = get_audios_paths( test_ids , audio_file_path='data//audio' )
 
 test_audios = load_audio( test_audios_paths )
 
@@ -67,7 +68,7 @@ train_losses = []
 val_losses = []
 best_val_loss = float('inf')
 
-EPOCHS = 10
+EPOCHS = 4
 for epoch in range(EPOCHS): #epoch
     train_loss = train(audio_model, train_loader, criterion, optimizer, device)
     val_loss = validate(audio_model, val_loader, criterion, device)
