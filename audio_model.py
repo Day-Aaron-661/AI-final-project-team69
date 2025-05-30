@@ -1,32 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import librosa
 import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import pandas as pd
-
-
-#///////////////////////////////////////////////////////////////////////////#
-                          # M p 3 to mel-spectrogram 
-#///////////////////////////////////////////////////////////////////////////#
-
-def mp3_to_mel( file_path , sr=22050 , n_mels=128, fixed_frames=1024 , duration=30 ):
-    y, _ = librosa.load(file_path , sr = sr , duration = duration )
-    mel = librosa.feature.melspectrogram( y = y , sr = sr , n_mels = n_mels )
-    mel = librosa.power_to_db(mel , ref=np.max )
-    mel = ( mel - mel.mean()) / (mel.std() + 1e-6 )
-
-    if mel.shape[1] < fixed_frames:
-        pad_nums = fixed_frames - mel.shape[1]
-        mel = np.pad( mel , ((0,0) , (0,pad_nums)) , mode="constant" , constant_values=(0,0))
-    else:
-        mel = mel[ : , :fixed_frames]
-
-    mel_tensor = torch.tensor(mel).unsqueeze(0).float()
-
-    return mel_tensor
 
 
 #///////////////////////////////////////////////////////////////////////////#
