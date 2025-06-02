@@ -1,0 +1,144 @@
+!npm install spotify-preview-finder dotenv
+!node -v
+!pip install spotipy
+
+import os
+import csv
+import json
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+import subprocess
+import ast
+import requests
+import urllib.parse
+import time
+
+SPOTIFY_CLIENT_ID = "78ddc36538f240c297fdecd7e16c454f"
+SPOTIFY_CLIENT_SECRET = "215ff11ee775477498fc9448d8f04709"
+
+with open(".env", "w") as f:
+    f.write(f"SPOTIFY_CLIENT_ID={SPOTIFY_CLIENT_ID}\n")
+    f.write(f"SPOTIFY_CLIENT_SECRET={SPOTIFY_CLIENT_SECRET}\n")
+
+js_code = '''
+const spotifyPreviewFinder = require('spotify-preview-finder');
+
+(async () => {
+  const songName = process.argv.slice(2).join(" ");
+  const result = await spotifyPreviewFinder(songName, 1);
+  if (result.success && result.results.length > 0) {
+    const song = result.results[0];
+    console.log(JSON.stringify({
+      name: song.name,
+      artist: song.artist,
+      previewUrls: song.previewUrls,
+      spotifyUrl: song.spotifyUrl
+    }));
+  } else {
+    console.error("No result");
+  }
+})();
+'''
+
+with open("get_preview.js", "w") as f:
+    f.write(js_code)
+
+sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+    client_id=SPOTIFY_CLIENT_ID,
+    client_secret=SPOTIFY_CLIENT_SECRET
+))
+
+def sanitize_for_url(text):
+    return urllib.parse.quote(text)
+
+def get_lyrics_ovh(artists, name):
+    encoded_artists = sanitize_for_url(artists)
+    encoded_name = sanitize_for_url(name)
+    url = f"https://api.lyrics.ovh/v1/{encoded_artists}/{encoded_name}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        lyric = response.json().get("lyrics", "")
+        return lyric
+    else:
+        return None
+
+def get_song_name_artist(track_id):
+    track = sp.track(track_id)
+    name = track["name"]
+    artist = track["artists"][0]["name"]
+    return f"{name} {artist}"
+
+id = 0
+max_id = 2000
+output_rows = []
+
+with open('/content/drive/MyDrive/AI_project/song.csv', newline='', encoding="utf-8") as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        if id >= max_id:
+          break
+        else :
+          id += 1
+        track_id = row["id"]
+        name = row["name"]
+        artists = ast.literal_eval(row["artists"])[0]
+        energy = row["energy"]
+        valence = row["valence"]
+        query = f"{name} {artists}"
+        result = subprocess.run(["node", "get_preview.js", *query.split()],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True)
+        lyric = get_lyrics_ovh(artists, name)
+        try:
+            response = json.loads(result.stdout)
+            if isinstance(response, dict) and response:
+                data = response
+            else:
+                id -= 1
+                continue
+        except Exception as e:
+            id -= 1
+            continue
+        if not lyric or result.returncode != 0:
+            id -= 1
+            continue
+        preview_url = data["previewUrls"][0]
+        preview_path = f"/content/drive/MyDrive/AI_project/audio/{id}.mp3"
+        try:
+            response = requests.get(preview_url)
+            if response.ok:
+                with open(preview_path, "wb") as f:
+                    f.write(response.content)
+            else:
+                if os.path.exists(preview_path):
+                  os.remove(preview_path)
+                id -= 1
+                continue
+        except Exception as e:
+            if os.path.exists(preview_path):
+              os.remove(preview_path)
+            id -= 1
+            continue
+        time.sleep(1
+        print(id))
+        if id % 10 == 0 :
+          type = "test"
+        elif id % 10 == 9 :
+          type = "validate"
+        else :
+          type = "train"
+        output_rows.append({
+            "id": id,
+            "energy": energy,
+            "valence": valence,
+            "type": type
+        })
+        lyric_path = f"/content/drive/MyDrive/AI_project/lyric/{id}.txt"
+        with open(lyric_path, "w", encoding="utf-8") as lyric_file:
+            lyric_file.write(lyric)
+
+with open('/content/drive/MyDrive/AI_project/id_energy_valence.csv', mode="w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=["id", "energy", "valence", "type"])
+    writer.writeheader()
+    writer.writerows(output_rows)
