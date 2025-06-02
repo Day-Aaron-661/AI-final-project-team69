@@ -7,9 +7,10 @@ class FusionModel(nn.Module):
         
         self.fc1 = nn.Linear(audio_dim + text_dim, 256)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.2)
         self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, output_dim)  
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, audio_feat, text_feat):
         
@@ -21,7 +22,10 @@ class FusionModel(nn.Module):
         
         x = self.fc2(x)
         x = self.relu(x)
-        
-        output = self.fc3(x)  
+        x = self.dropout(x)
+
+        x = self.fc3(x)  
+
+        output = self.sigmoid(x)
         
         return output
