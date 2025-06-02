@@ -7,28 +7,30 @@ from make_mel import mp3_to_mel
 from torch.utils.data import Dataset
 
 class Combined_Dataset(Dataset):
-    def __init__(self, audios , lyrics, labels ):
+    def __init__(self, audios , lyrics, labels , ids):
         self.audios = audios
         self.lyrics = lyrics
         self.labels = labels  
+        self.ids = ids
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.audios[idx], self.lyrics[idx], self.labels[idx]
+        return self.audios[idx], self.lyrics[idx], self.labels[idx] , self.ids[idx]
 
 class Audio_Dataset(Dataset):
-    def __init__(self, audios ,labels ):
+    def __init__(self, audios ,labels , ids):
         self.audios = audios
         self.labels = labels  
+        self.ids = ids
 
     def __len__(self):
 
-        return len(self.labels)
+        return len(self.ids)
 
     def __getitem__(self, idx):
-        return self.audios[idx], self.labels[idx]
+        return self.audios[idx], self.labels[idx] , self.ids[idx]
     
 def load_audio( audio_paths ):
 
@@ -40,7 +42,7 @@ def load_audio( audio_paths ):
         elif audio_path.endswith('.mp3'):
             audio = mp3_to_mel(audio_path)
         audios.append(audio)
-    
+    # print(len(audios))
     return audios
 
 def load_lyric( lyric_paths ):
@@ -69,7 +71,7 @@ def get_ids_and_labels( csv_path , Type ):
 
     ids = data['id']
     labels = torch.tensor(data[['energy', 'valence']].values, dtype=torch.float32)
-
+    #print(len(labels))
     return ids , labels
 
 def get_audios_paths ( ids , audio_file_path ):
@@ -84,7 +86,6 @@ def get_audios_paths ( ids , audio_file_path ):
             audio_paths.append(pt_path)
         elif os.path.exists(mp3_path):
             audio_paths.append(mp3_path)
-
     return audio_paths
 
 def get_lyrics_paths ( ids , lyric_file_path ):

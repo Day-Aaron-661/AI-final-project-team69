@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from dataset import ( Audio_Dataset , get_audios_paths ,
                       get_ids_and_labels ,  load_audio ,)
-
+import matplotlib.pyplot as plt
 
 #///////////////////////////////////////////////////////////////////////////#
                           # I n i t i a l i z e
@@ -18,9 +18,9 @@ audio_model = AudioCNN()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 audio_model = audio_model.to(device)
 criterion = nn.MSELoss()
-optimizer = optim.Adam( audio_model.parameters() , lr=1e-3 )
+optimizer = optim.Adam( audio_model.parameters() , lr=1e-4 , weight_decay=1e-5)
 
-# process_all_mp3_to_pt( audio_dir='data//audio' )
+#process_all_mp3_to_pt( audio_dir='data//audio' )
 
 #///////////////////////////////////////////////////////////////////////////#
                        # L o a d  D a t a ( train )
@@ -28,12 +28,14 @@ optimizer = optim.Adam( audio_model.parameters() , lr=1e-3 )
 
 print("Loading training data...")
 
-train_ids , train_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='train' )
+# train_ids , train_labels = get_ids_and_labels( csv_path='data//labels_2000.csv' , Type='train' )
+train_ids , train_labels = get_ids_and_labels( csv_path='data//labels_4000.csv' , Type='train' )
+# train_ids , train_labels = get_ids_and_labels( csv_path='data//labels_8000.csv' , Type='train' )
 train_audios_paths = get_audios_paths( train_ids , audio_file_path='data//audio' )
 
 train_audios = load_audio( train_audios_paths )
 
-train_dataset = Audio_Dataset ( train_audios , train_labels )
+train_dataset = Audio_Dataset ( train_audios , train_labels , train_ids)
 train_loader = DataLoader( train_dataset , batch_size=16 , shuffle=True )
 
 
@@ -42,12 +44,14 @@ train_loader = DataLoader( train_dataset , batch_size=16 , shuffle=True )
 #///////////////////////////////////////////////////////////////////////////#
 print("Loading validation data...")
 
-val_ids , val_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='validate' )
+# val_ids , val_labels = get_ids_and_labels( csv_path='data//labels_2000.csv' , Type='validate' )
+val_ids , val_labels = get_ids_and_labels( csv_path='data//labels_4000.csv' , Type='validate' )
+# val_ids , val_labels = get_ids_and_labels( csv_path='data//labels_8000.csv' , Type='validate' )
 val_audios_paths = get_audios_paths( val_ids , audio_file_path='data//audio' )
 
 val_audios = load_audio( val_audios_paths )
 
-val_dataset = Audio_Dataset ( val_audios , val_labels )
+val_dataset = Audio_Dataset ( val_audios , val_labels ,val_ids)
 val_loader = DataLoader( val_dataset , batch_size=16 , shuffle=False )
 
 
@@ -56,12 +60,14 @@ val_loader = DataLoader( val_dataset , batch_size=16 , shuffle=False )
 #///////////////////////////////////////////////////////////////////////////#
 
 print("Loading test data...")
-test_ids , test_labels = get_ids_and_labels( csv_path='data//labels.csv' , Type='test' )
+# test_ids , test_labels = get_ids_and_labels( csv_path='data//labels_2000.csv' , Type='test' )
+test_ids , test_labels = get_ids_and_labels( csv_path='data//labels_4000.csv' , Type='test' )
+# test_ids , test_labels = get_ids_and_labels( csv_path='data//labels_8000.csv' , Type='test' )
 test_audios_paths = get_audios_paths( test_ids , audio_file_path='data//audio' )
 
 test_audios = load_audio( test_audios_paths )
 
-test_dataset = Audio_Dataset ( test_audios , test_labels )
+test_dataset = Audio_Dataset ( test_audios , test_labels , test_ids)
 test_loader = DataLoader( test_dataset , batch_size=16 , shuffle=False )
 
 
@@ -88,10 +94,23 @@ for epoch in range(EPOCHS):
         print("Best model saved!")
    
     print("Training CNN .......... epoch =", epoch, 
-          " finished ",", train_loss =", train_loss,  ", value_loss =", val_loss,)
+          " finished ",", train_loss =", train_loss,  ", value_loss =", val_loss)
 
+epochs = list(range(1, len(train_losses) + 1))
+
+plt.figure(figsize=(10, 6))
+plt.plot(epochs, train_losses, label="Train Loss", marker='o' , color='blue')
+plt.plot(epochs, val_losses, label="Validation Loss", marker='o' , color='orange')
+plt.xlabel("Epoch")
+plt.ylabel("Loss (MSE)")
+plt.title("Training vs Validation Loss")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 
 #///////////////////////////////////////////////////////////////////////////#
                               # t e s t i n g 
 #///////////////////////////////////////////////////////////////////////////#
 test( audio_model , test_loader , criterion , device)
+## 4500 R² (Energy): 0.6763 , R² (Valence): 0.4422 val loss 0.247
