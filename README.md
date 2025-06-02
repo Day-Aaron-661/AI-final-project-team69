@@ -16,7 +16,8 @@ We also include a **application** that recommends songs with similar emotional p
 
 
 ## System Architecture
-![alt text](<import torch from torch import nn class FusionModel(nn.Module) def __init__(self, audio_dim=128, text_dim=128, output_dim=2) super(FusionModel, self).__init__() self.fc1 = nn.Linear(audio_dim + te (4).png>)
+![import torch from torch import nn class FusionModel(nn Module) def __init__(self, audio_dim=128, text_dim=128, output_dim=2) super(FusionModel, self) __init__() self fc1 = nn Linear(audio_dim + te (4)](https://github.com/user-attachments/assets/9fe9a97f-4a8b-4453-acb4-a8b607ed3f41)
+
 
 ## Run Examples
 
